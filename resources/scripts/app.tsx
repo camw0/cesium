@@ -14,7 +14,7 @@ root.render(
         <Router>
             <Routes>
                 <Route element={<ProtectedRoute />}>
-                    {/* Protected routes will go here */}
+                    <Route path={'/'} element={<>Secure Route</>} />
                 </Route>
                 <Route path={'/auth/login'} element={<Login />} />
                 <Route path={'*'} element={<>Not Found</>} />

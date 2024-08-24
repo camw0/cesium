@@ -2,14 +2,20 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Models\User;
+use Illuminate\Support\Str;
+use Illuminate\Http\Request;
 use Illuminate\Contracts\View\View;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\RedirectResponse;
 use Laravel\Socialite\Facades\Socialite;
+use Illuminate\Contracts\Hashing\Hasher;
 use SocialiteProviders\Discord\Provider as DiscordProvider;
 
 class LoginController extends Controller
 {
-    public function __construct()
+    public function __construct(private Hasher $hasher)
     {
         $this->config = [
             'redirect' => config('services.discord.redirect'),
@@ -42,10 +48,29 @@ class LoginController extends Controller
     /**
      * Process data returned from ext. OAuth API
      */
-    public function callback()
+    public function callback(Request $request): RedirectResponse
     {
-        $user = Socialite::driver('discord')->user();
+        $user = null;
+        $discord = Socialite::driver('discord')->user();
 
-        dd($user);
+        if (User::where('email', $discord->email)->exists()) {
+            $user = User::where($discord->email)->first();
+        } else {
+            $user = User::create([
+                'email' => $discord->email,
+                'name' => $discord->name,
+                'discord_id' => $discord->id,
+                'avatar' => $discord->avatar,
+                'password' => $this->hasher->make(Str::random(64)),
+            ]);
+        };
+
+        if ($user instanceof User) {
+            Auth::login($user, true);
+        } else {
+            throw new Exception('authentication flow failed: not instanceof user');
+        };
+
+        return redirect()->route('web.index');
     }
 }
