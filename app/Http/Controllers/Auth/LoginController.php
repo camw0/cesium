@@ -54,7 +54,7 @@ class LoginController extends Controller
         $discord = Socialite::driver('discord')->user();
 
         if (User::where('email', $discord->email)->exists()) {
-            $user = User::where($discord->email)->first();
+            $user = User::where('email', $discord->email)->first();
         } else {
             $user = User::create([
                 'email' => $discord->email,
